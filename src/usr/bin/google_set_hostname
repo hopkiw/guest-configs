@@ -16,14 +16,18 @@
 # Deal with a new hostname assignment.
 
 if [ -n "$new_host_name" ] && [ -n "$new_ip_address" ]; then
-  # Delete entries with new_host_name or new_ip_address in /etc/hosts.
-  sed -i"" '/Added by Google/d' /etc/hosts
+  # Don't allow DHCP responses with the MDS as the hostname.
+  # See: https://github.com/irsl/gcp-dhcp-takeover-code-exec
+  if ! [[ "$new_host_name" =~ "metadata.google.internal" ]]; then
+    # Delete entries with new_host_name or new_ip_address in /etc/hosts.
+    sed -i"" '/Added by Google/d' /etc/hosts
 
-  # Add an entry for our new_host_name/new_ip_address in /etc/hosts.
-  echo "${new_ip_address} ${new_host_name} ${new_host_name%%.*}  # Added by Google" >> /etc/hosts
+    # Add an entry for our new_host_name/new_ip_address in /etc/hosts.
+    echo "${new_ip_address} ${new_host_name} ${new_host_name%%.*}  # Added by Google" >> /etc/hosts
 
-  # Add an entry for reaching the metadata server in /etc/hosts.
-  echo "169.254.169.254 metadata.google.internal  # Added by Google" >> /etc/hosts
+    # Add an entry for reaching the metadata server in /etc/hosts.
+    echo "169.254.169.254 metadata.google.internal  # Added by Google" >> /etc/hosts
+  fi
 fi
 
 # /sbin/dhclient-scripts in both ubuntu and centos have some problems for us:
